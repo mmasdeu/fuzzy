@@ -33,11 +33,12 @@ def support (X : fuzzy_set u) : set u := {x : u | (mem X x) > 0}
 @[simp]
 def classical_to_fuzzy (X : set u) : fuzzy_set u := λ x, ite (x ∈ X) ⟨1,by simp⟩ ⟨0,by simp⟩
 
+notation `ℱ` X  := classical_to_fuzzy X
 
-example : mem (classical_to_fuzzy (Icc (3:ℝ) 5)) 4 ≥ 0.5 :=
+example : mem (ℱ (Icc (3:ℝ) 5)) 4 ≥ 0.5 :=
 begin
   have h1 : 3 ≤ (4 : ℝ) ∧ (4 : ℝ) ≤ 5, by {split; linarith},
-  rw show mem (classical_to_fuzzy (Icc (3:ℝ) 5)) (4:ℝ) = 1, by simp [h1],
+  rw show mem (ℱ (Icc (3:ℝ) 5)) (4:ℝ) = 1, by simp [h1],
   linarith,
 end
 
@@ -49,4 +50,51 @@ def test : fuzzy_set ℝ := λ x,
 -- x ∈ cl(X, α) ↔ mem X x > α
 
 -- Enuncia i demostra el lema : si α ≤ β, cl(X, β) ⊆ cl(X, α)
+
+instance {α : Type*} : has_sup (fuzzy_set α) := { sup := λ A B, (λ x, max (A x) (B x)) }
+instance {α : Type*} : has_inf (fuzzy_set α) := { inf := λ A B, (λ x, max (A x) (B x)) }
+
+
+
+@[norm_cast] lemma max_val_comm {x y : Icc (0 : ℝ) 1} :  ((max x y) : ℝ) = max x.val y.val :=
+begin
+  by_cases h : x ≤ y,
+  {
+    simp [h],
+  },
+  {
+    replace h : y ≤ x,
+    {
+      unfold has_le.le,
+      unfold preorder.le,
+      push_neg at h,
+      unfold has_lt.lt at h,
+      unfold preorder.lt at h,
+      linarith [h],
+    },
+    simp [h],
+  }
+end
+
+instance is_lattice {α : Type*} : lattice (fuzzy_set α) := sorry
+
+instance is_distrib_lattice {α : Type*} : distrib_lattice (fuzzy_set α) := {
+  le_sup_inf := sorry
+  ..fuzzy.is_lattice
+}
+
+example {a b : ℝ} (x : Icc a b) : (x : ℝ) ≤ b :=
+begin
+rcases x with ⟨xv, ⟨x1, x2⟩⟩,
+norm_num,
+exact x2,
+end
+
+
+#check Sup (range (mem X))
+
 end fuzzy
+
+variables (A : set ℝ)
+#check (univ : set ℝ)
+
